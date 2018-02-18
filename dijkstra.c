@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
+
+#include <locale.h>
  
 typedef struct {
     int vertex;
@@ -151,7 +153,7 @@ void dijkstra (graph_t *g, int a, int b, int* m_lookup, int* heuristic, int* exi
     }
 }
  
-void print_path (graph_t *g, int i) {
+void print_path (graph_t *g, int i, int* m_lookup, char (*names)[50]) {
     int n, j;
     vertex_t *v, *u;
     v = g->vertices[i];
@@ -166,11 +168,28 @@ void print_path (graph_t *g, int i) {
     for (j = 0, u = v; u->dist; u = g->vertices[u->prev], j++)
         path[n - j - 2] = u->prev;
     printf("Adjusted distance: %d\n", v->dist);
-    for (int k = 0; k < n-1; k++) printf("%d -> ", path[k]);
-    printf("%d\n", path[n-1]);
+    for (int k = 0; k < n-1; k++) printf("%s(%d) -> ", names[m_lookup[path[k]]], path[k]);
+    printf("%s(%d)\n", names[m_lookup[path[n-1]]], path[n-1]);
 }
  
 int main () {	
+
+	SetConsoleCP(1251);
+	SetConsoleOutputCP(1251);
+	
+	printf("%s","Loading station names\n");
+	int st_names_size;
+	FILE *st_names_file;
+	st_names_file = fopen("station_names_c.txt","r");
+	fscanf(st_names_file, "%d", &st_names_size);
+	char st_names [st_names_size][50];
+	fgets(st_names[0],50,st_names_file); // move reseted counter 
+	for(int i=0;i<st_names_size;i++) {
+		fgets(st_names[i],50,st_names_file);
+		st_names[i][strlen(st_names[i]) - 1] = '\0';
+	}
+	printf("%s","Completed loading station names\n");
+
 
 	printf("%s","Loading master station lookup\n");
 	/* read lookup table (array) for node to master node: start */
@@ -198,7 +217,7 @@ int main () {
 	/* read matrix of heuristic function: end */
 	printf("%s","Completed loading heuristic table\n");
 
-	printf("%s","Load and construct graph connections\n");
+	printf("%s","Loading and constructing graph connections\n");
 	/* read connections data and build graph: start */
     graph_t *g = calloc(1, sizeof (graph_t));
     for(int i=0;i<809;i++) add_edge(g, i, i+1, 0);
@@ -218,7 +237,8 @@ int main () {
 	}
 	fclose(train_con_file);
     printf("%s","Train connections added\n");
-    
+
+	printf("%s","Started loading wait connections\n");    
     int wait_con_size;
     FILE *wait_con_file;
     wait_con_file = fopen("connections_wait_cpp.txt","r");
@@ -240,14 +260,16 @@ int main () {
 		int *exit = calloc(1, sizeof (int)); *exit = 0;
 		printf("%s","Enter id of timestamped start station and id of master end station\n");
     	scanf("%d", &a); scanf("%d", &b);
-    
+    	
+    	if(a==-1) break;
+    	
     	/* narrow down heuristic matrix to array: start */
     	int* h_arr = malloc(h_row_size*sizeof(int));
     	for(int i=0;i<h_row_size;i++) h_arr[i] = h_mat[i][b];
     	/* narrow down heuristic matrix to array: end */
     
     	dijkstra(g, a, b, master_lookup, h_arr, exit);
-    	print_path(g, *exit);
+    	print_path(g, *exit, master_lookup, st_names);
 	}
     return 0;
 }
