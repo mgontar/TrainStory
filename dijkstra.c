@@ -1,3 +1,9 @@
+/* 
+Dijkstra algorithm with reduced cost presented here. Equivalent to A* with given heuristic function.
+Original implementation of the Dijkstra algorithm, which it has been built upon, can be found at the website: 
+https://rosettacode.org/wiki/Dijkstra%27s_algorithm 
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
